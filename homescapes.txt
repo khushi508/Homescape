@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match-3 Puzzle Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <h1>Match-3 Puzzle Game</h1>
+        <div id="board"></div>
+        <p>Score: <span id="score">0</span></p>
+        <button id="reset-btn">Reset Game</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+}
+
+#game-container {
+    margin-top: 50px;
+}
+
+h1 {
+    color: #333;
+}
+
+#board {
+    display: grid;
+    grid-template-columns: repeat(8, 60px);
+    grid-gap: 5px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.tile {
+    width: 60px;
+    height: 60px;
+    background-color: #ccc;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.tile.red { background-color: red; }
+.tile.blue { background-color: blue; }
+.tile.green { background-color: green; }
+.tile.yellow { background-color: yellow; }
+.tile.purple { background-color: purple; }
+.tile.orange { background-color: orange; }
+
+button {
+    padding: 10px 20px;
+    margin-top: 20px;
+    font-size: 18px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #218838;
+}
+// Constants and variables for the game
+const boardSize = 8; // 8x8 grid
+const colors = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+let board = [];
+let score = 0;
+let selectedTile = null;
+
+// Select game elements
+const boardElement = document.getElementById('board');
+const scoreElement = document.getElementById('score');
+const resetBtn = document.getElementById('reset-btn');
+
+// Create an empty board
+function createBoard() {
+    board = [];
+    boardElement.innerHTML = ''; // Clear the board
+
+    for (let row = 0; row < boardSize; row++) {
+        let rowArray = [];
+        for (let col = 0; col < boardSize; col++) {
+            let tileColor = colors[Math.floor(Math.random() * colors.length)];
+            const tile = document.createElement('div');
+            tile.classList.add('tile', tileColor);
+            tile.setAttribute('data-row', row);
+            tile.setAttribute('data-col', col);
+            tile.addEventListener('click', handleTileClick);
+            boardElement.appendChild(tile);
+            rowArray.push(tile);
+        }
+        board.push(rowArray);
+    }
+}
+
+// Handle tile click to select and swap
+function handleTileClick(event) {
+    const clickedTile = event.target;
+    const clickedRow = parseInt(clickedTile.getAttribute('data-row'));
+    const clickedCol = parseInt(clickedTile.getAttribute('data-col'));
+
+    if (selectedTile) {
+        const selectedRow = parseInt(selectedTile.getAttribute('data-row'));
+        const selectedCol = parseInt(selectedTile.getAttribute('data-col'));
+
+        // Check if the clicked tile is adjacent to the selected tile
+        if (isAdjacent(clickedRow, clickedCol, selectedRow, selectedCol)) {
+            // Swap tiles
+            swapTiles(clickedRow, clickedCol, selectedRow, selectedCol);
+            // Check for matches
+            checkMatches();
+        }
+        // Deselect the tile
+        selectedTile = null;
+    } else {
+        selectedTile = clickedTile;
+    }
+}
+
+// Check if two tiles are adjacent
+function isAdjacent(row1, col1, row2, col2) {
+    return Math.abs(row1 - row2) === 1 && col1 === col2 || Math.abs(col1 - col2) === 1 && row1 === row2;
+}
+
+// Swap two tiles
+function swapTiles(row1, col1, row2, col2) {
+    const tile1 = board[row1][col1];
+    const tile2 = board[row2][col2];
+    const color1 = tile1.classList[1];
+    const color2 = tile2.classList[1];
+
+    tile1.classList.replace(color1, color2);
+    tile2.classList.replace(color2, color1);
+    
+    // Update the board array
+    board[row1][col1] = tile2;
+    board[row2][col2] = tile1;
+}
+
+// Check for matches in rows and columns
+function checkMatches() {
+    let matchedTiles = [];
+
+    // Check for horizontal matches
+    for (let row = 0; row < boardSize; row++) {
+        for (let col = 0; col < boardSize - 2; col++) {
+            let tile = board[row][col];
+            if (tile.classList[1] === board[row][col + 1].classList[1] && tile.classList[1] === board[row][col + 2].classList[1]) {
+                matchedTiles.push(tile, board[row][col + 1], board[row][col + 2]);
+            }
+        }
+    }
+
+    // Check for vertical matches
+    for (let col = 0; col < boardSize; col++) {
+        for (let row = 0; row < boardSize - 2; row++) {
+            let tile = board[row][col];
+            if (tile.classList[1] === board[row + 1][col].classList[1] && tile.classList[1] === board[row + 2][col].classList[1]) {
+                matchedTiles.push(tile, board[row + 1][col], board[row + 2][col]);
+            }
+        }
+    }
+
+    // Remove matched tiles
+    if (matchedTiles.length > 0) {
+        matchedTiles.forEach(tile => {
+            tile.classList.remove(tile.classList[1]);
+            const newColor = colors[Math.floor(Math.random() * colors.length)];
+            tile.classList.add(newColor);
+        });
+        score += matchedTiles.length / 3;
+        scoreElement.textContent = score;
+    }
+}
+
+// Reset the game
+function resetGame() {
+    score = 0;
+    scoreElement.textContent = score;
+    createBoard();
+}
+
+// Start the game
+createBoard();
+
+// Add reset functionality
+resetBtn.addEventListener('click', resetGame);
